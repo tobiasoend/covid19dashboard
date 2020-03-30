@@ -42,6 +42,10 @@ fore.dates <- seq.Date(from = max_data+1,
 
 plot_daily <- df_daily[df_daily$date > "2020-02-27",]
 
+TS_fc$mean <- round(TS_fc$mean, digits=0)
+TS_fc$upper <- round(TS_fc$upper, digits=0)
+TS_fc$lower <- round(TS_fc$lower, digits=0)
+
 library(plotly)
 plotly::plot_ly() %>%
     plotly::add_lines(x = plot_daily$date, y = plot_daily$confirmed_cum,
@@ -57,4 +61,10 @@ plotly::plot_ly() %>%
     plotly::add_ribbons(x = fore.dates,
                         ymin = TS_fc$lower[, 1],
                         ymax = TS_fc$upper[, 1],
-                        color = I("gray80"), name = "80% confidence")
+                        color = I("gray80"), name = "80% confidence") %>% 
+    layout(annotations = 
+               list(x = 1, y = -0.1, text = paste("AIC:",TS_fit$aic, "Log-Likelihood:", TS_fit$loglik, sep = " "), 
+                    showarrow = F, xref='paper', yref='paper', 
+                    xanchor='right', yanchor='auto', xshift=0, yshift=-14,
+                    font=list(size=8, color="grey95"))
+    )
