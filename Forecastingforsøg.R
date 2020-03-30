@@ -63,8 +63,8 @@ plotly::plot_ly() %>%
                         ymax = TS_fc$upper[, 1],
                         color = I("gray80"), name = "80% confidence") %>% 
     layout(annotations = 
-               list(x = 1, y = -0.1, text = paste("AIC:",TS_fit$aic, "Log-Likelihood:", TS_fit$loglik, sep = " "), 
+               list(x = 0.55, y = 0.95, text = paste("AIC:",TS_fit$aic, "Log-Likelihood:", TS_fit$loglik, sep = " "), 
                     showarrow = F, xref='paper', yref='paper', 
                     xanchor='right', yanchor='auto', xshift=0, yshift=-14,
-                    font=list(size=8, color="grey95"))
+                    font=list(size=7, color="black"))
     )
