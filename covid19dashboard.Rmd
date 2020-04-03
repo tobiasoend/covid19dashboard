@@ -72,6 +72,7 @@ df_daily <- coronavirus %>%
     active_cum = cumsum(active)
   )
 df1 <- coronavirus %>% dplyr::filter(date == max(date))
+df_daily <- df_daily[df_daily$date >= "2020-02-27",]
 ```
 
 Summary
@@ -160,14 +161,14 @@ plotly::plot_ly(data = df_daily) %>%
     arrowhead = 3,
     arrowsize = 1,
     showarrow = TRUE,
-    ax = -10,
+    ax = 0,
     ay = -90
   ) %>%
   plotly::add_annotations(
     x = as.Date("2020-03-03"),
     y = 3,
     text = paste(
-        "High-risk quarantine:",
+        "High-risk quarantine of",
         "<br>",
         "Danes coming back from",
         "<br>",
@@ -178,7 +179,7 @@ plotly::plot_ly(data = df_daily) %>%
     arrowhead = 3,
     arrowsize = 1,
     showarrow = TRUE,
-    ax = 10,
+    ax = 0,
     ay = -90
   ) %>%
   plotly::add_annotations(
@@ -195,7 +196,7 @@ plotly::plot_ly(data = df_daily) %>%
     arrowhead = 3,
     arrowsize = 1,
     showarrow = TRUE,
-    ax = -10,
+    ax = 0,
     ay = 60
   ) %>%
   plotly::add_annotations(
@@ -212,7 +213,7 @@ plotly::plot_ly(data = df_daily) %>%
     arrowhead = 3,
     arrowsize = 1,
     showarrow = T,
-    ax = 10,
+    ax = 0,
     ay = 60
   ) %>%
   plotly::layout(
@@ -426,7 +427,7 @@ fore.dates <- seq.Date(from = max_data+1,
                        to = max_data+forecast_length,
                        by="days")
 
-plot_daily <- df_daily[df_daily$date > "2020-02-27",]
+plot_daily <- df_daily[df_daily$date >= "2020-02-27",]
 
 TS_fc$mean <- round(TS_fc$mean, digits=0)
 TS_fc$upper <- round(TS_fc$upper, digits=0)
