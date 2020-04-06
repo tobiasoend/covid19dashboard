@@ -68,7 +68,7 @@ df_daily <- coronavirus %>%
   dplyr::mutate(
     confirmed_cum = cumsum(confirmed),
     death_cum = cumsum(death),
-    # recovered_cum = cumsum(recovered),
+    recovered_cum = cumsum(recovered),
     active_cum = cumsum(active)
   )
 df1 <- coronavirus %>% dplyr::filter(date == max(date))
@@ -140,6 +140,17 @@ plotly::plot_ly(data = df_daily) %>%
     name = "Confirmed",
     line = list(color = active_color),
     marker = list(color = active_color)
+  ) %>%
+  plotly::add_trace(
+    x = ~date,
+    # y = ~active_cum,
+    y = ~recovered_cum,
+    type = "scatter",
+    mode = "lines+markers",
+    # name = "Active",
+    name = "Recovered",
+    line = list(color = recovered_color),
+    marker = list(color = recovered_color)
   ) %>%
   plotly::add_trace(
     x = ~date,
@@ -216,6 +227,23 @@ plotly::plot_ly(data = df_daily) %>%
     ax = 0,
     ay = 60
   ) %>%
+  plotly::add_annotations(
+    x = as.Date("2020-04-01"),
+    y = 14,
+    text = paste(
+      "'Statens Serum Institut'",
+      "<br>",
+      "Calculates # of recovered"
+    ),
+    xref = "x",
+    yref = "y",
+    arrowhead = 5,
+    arrowhead = 3,
+    arrowsize = 1,
+    showarrow = T,
+    ax = 0,
+    ay = 60
+  )%>%
   plotly::layout(
     title = "",
     yaxis = list(title = "Cumulative number of cases"),
@@ -233,7 +261,7 @@ Column {data-width=400}
 -------------------------------------
 
 
-### **Daily new confirmed cases**
+### **Daily new cases**
     
 ```{r}
 daily_confirmed <- coronavirus %>%
@@ -271,10 +299,10 @@ daily_confirmed %>%
   ) %>%
   plotly::add_trace(
     x = ~date,
-    y = ~Tunisia,
+    y = ~Finland,
     type = "scatter",
     mode = "lines+markers",
-    name = "Tunisia"
+    name = "Finland"
   ) %>%
   plotly::layout(
     title = "",
@@ -302,7 +330,7 @@ df_EU <- coronavirus %>%
   # dplyr::filter(date == max(date)) %>%
   dplyr::filter(Country.Region == "Denmark" |
     Country.Region == "Norway" |
-    Country.Region == "Tunisia" |
+    Country.Region == "Finland" |
     Country.Region == "Sweden") %>%
   dplyr::group_by(Country.Region, type) %>%
   dplyr::summarise(total = sum(cases)) %>%
@@ -356,7 +384,7 @@ plotly::plot_ly(
 Map
 =======================================================================
 
-### **World map of cases** (*scroll using mouse OR use + and - icons to zoom in/out*)
+### **World map of cases**
 
 ```{r}
 # map tab
@@ -405,21 +433,21 @@ map_object %>%
 ```
 
 
-Forecasting Danish cases
+Forecasting Danish deaths
 =======================================================================
 
 Row {data-width=400}
 -----------------------------------------------------------------------
 
-### **ARIMA - AutoRegressive-Integrated-Moving-Average - for Danish cases**
+### **ARIMA - AutoRegressive-Integrated-Moving-Average - for Danish deaths**
     
 ```{r}
 library(forecast)
 min_data <- min(df_daily$date)
 max_data <- max(df_daily$date)
-forecast_length = 7
+forecast_length = 10
 
-TS_data <- ts(df_daily[,c(1,6)], frequency = 7)
+TS_data <- ts(df_daily[,c(1,7)], frequency = 7)
 TS_fit <- auto.arima(TS_data[,2])
 TS_fc <- forecast(TS_fit, h=forecast_length)
 
@@ -435,11 +463,11 @@ TS_fc$lower <- round(TS_fc$lower, digits=0)
 
 library(plotly)
 plotly::plot_ly() %>%
-    plotly::add_lines(x = plot_daily$date, y = plot_daily$confirmed_cum,
+    plotly::add_lines(x = plot_daily$date, y = plot_daily$death_cum,
                       color = I("black"),
-                      name = "observed",
+                      name = "Observed deaths",
                       marker=list(mode='lines')) %>%
-    plotly::add_lines(x = fore.dates, y = TS_fc$mean, color = I("blue"), name = "prediction") %>%
+    plotly::add_lines(x = fore.dates, y = TS_fc$mean, color = I("blue"), name = "Predicted deaths") %>%
     plotly::add_ribbons(x = fore.dates,
                         ymin = TS_fc$lower[, 2],
                         ymax = TS_fc$upper[, 2],
@@ -450,7 +478,7 @@ plotly::plot_ly() %>%
                         ymax = TS_fc$upper[, 1],
                         color = I("gray80"), name = "80% confidence") %>% 
     layout(annotations = 
-               list(x = 0.40, y = 0.90, text = paste("AIC:",TS_fit$aic, "Log-Likelihood:", TS_fit$loglik, sep = " "), 
+               list(x = 0.40, y = 0.90, text = paste("AIC:",TS_fit$aic, "| Log-Likelihood:", TS_fit$loglik, sep = " "), 
                     showarrow = F, xref='paper', yref='paper', 
                     xanchor='right', yanchor='auto', xshift=0, yshift=-14,
                     font=list(size=10, color="black"))
@@ -483,3 +511,6 @@ The raw data is pulled from the Johns Hopkins University Center for Systems Scie
 **Update**
 <br>
 The data is as of `r format(max(coronavirus$date))` and the dashboard has been updated on `r format(Sys.time())`.
+
+<br>
+Contact me at this 
