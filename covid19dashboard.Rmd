@@ -164,25 +164,9 @@ plotly::plot_ly(data = df_daily) %>%
     x = as.Date("2020-02-27"),
     y = 1,
     text = paste(
-        "First case in DK"),
-    xref = "x",
-    yref = "y",
-    arrowhead = 5,
-    arrowhead = 3,
-    arrowsize = 1,
-    showarrow = TRUE,
-    ax = 0,
-    ay = -90
-  ) %>%
-  plotly::add_annotations(
-    x = as.Date("2020-03-03"),
-    y = 3,
-    text = paste(
-        "High-risk quarantine of",
+        "First case in DK",
         "<br>",
-        "Danes coming back from",
-        "<br>",
-        "China, Italy, Iran"),
+        "Feb 27th"),
     xref = "x",
     yref = "y",
     arrowhead = 5,
@@ -194,11 +178,11 @@ plotly::plot_ly(data = df_daily) %>%
   ) %>%
   plotly::add_annotations(
     x = as.Date("2020-03-11"),
-    y = 14,
+    y = 800,
     text = paste(
       "Covid-19 declared",
       "<br>",
-      "pandemic"
+      "a pandemic"
     ),
     xref = "x",
     yref = "y",
@@ -207,16 +191,12 @@ plotly::plot_ly(data = df_daily) %>%
     arrowsize = 1,
     showarrow = TRUE,
     ax = 0,
-    ay = 60
+    ay = -90
   ) %>%
   plotly::add_annotations(
     x = as.Date("2020-03-17"),
-    y = 14,
-    text = paste(
-      "Queen of Denmark's speech:",
-      "<br>",
-      "Lockdown follows"
-    ),
+    y = 1250,
+    text = "Denmark is locked down",
     xref = "x",
     yref = "y",
     arrowhead = 5,
@@ -224,15 +204,15 @@ plotly::plot_ly(data = df_daily) %>%
     arrowsize = 1,
     showarrow = T,
     ax = 0,
-    ay = 60
+    ay = -90
   ) %>%
   plotly::add_annotations(
     x = as.Date("2020-04-01"),
     y = 14,
     text = paste(
-      "'Statens Serum Institut'",
+      "SSI starts calculating",
       "<br>",
-      "Calculates # of recovered"
+      "# of recovered"
     ),
     xref = "x",
     yref = "y",
@@ -242,7 +222,20 @@ plotly::plot_ly(data = df_daily) %>%
     showarrow = T,
     ax = 0,
     ay = 60
-  )%>%
+  ) %>%
+  plotly::add_annotations(
+    x = as.Date("2020-04-14"),
+    y = 14,
+    text = "Denmark slowly reopens",
+    xref = "x",
+    yref = "y",
+    arrowhead = 5,
+    arrowhead = 3,
+    arrowsize = 1,
+    showarrow = T,
+    ax = 0,
+    ay = 60
+  ) %>%
   plotly::layout(
     title = "",
     yaxis = list(title = "Cumulative number of cases"),
@@ -444,7 +437,7 @@ Row {data-width=400}
 library(forecast)
 min_data <- min(df_daily$date)
 max_data <- max(df_daily$date)
-forecast_length = 10
+forecast_length = 30
 
 TS_data <- ts(df_daily[,c(1,7)], frequency = 7)
 TS_fit <- auto.arima(TS_data[,2])
@@ -459,6 +452,10 @@ plot_daily <- df_daily[df_daily$date >= "2020-02-27",]
 TS_fc$mean <- round(TS_fc$mean, digits=0)
 TS_fc$upper <- round(TS_fc$upper, digits=0)
 TS_fc$lower <- round(TS_fc$lower, digits=0)
+
+td <- plot_daily$death_cum[nrow(plot_daily)]
+
+TS_fc$lower[TS_fc$lower<td] <- td
 
 library(plotly)
 plotly::plot_ly() %>%
@@ -485,6 +482,102 @@ plotly::plot_ly() %>%
 ```
 
 
+Estimating R0
+=======================================================================
+
+Row {data-width=400}
+-----------------------------------------------------------------------
+
+### **Estimating Danish R0 using SIR model rougly equivalent to SSI / CDC estimates**
+    
+```{r}
+library(tidyverse)
+library(EpiEstim)
+library(plotly)
+
+url <- "https://api.covid19data.dk/ssi_newly_hospitalized"
+hosp_raw <- jsonlite::fromJSON(url)
+hosp_raw <- hosp_raw %>%
+    as_tibble() %>%
+    mutate(date = date %>% lubridate::ymd_hms() %>% as.Date())
+
+ads <- hosp_raw %>%
+    # slice(1:(n()-4)) %>% # remove last four entries
+    mutate(rollingmean = c(rep(NA, 3),  # Adding a rolling mean
+                           zoo::rollmean(x = newly_hospitalized, k = 7), 
+                           rep(NA, 3)))
+
+## Choosing parameters for estimating R ########################################
+
+# We need to supply the estimate_R function with some parameters in order for it
+# to estimate R. We will use two sets of parameters:
+# 1) from the CDC where they have estimated mean and the standard deviation for
+#    the serial interval.
+# 2) Numbers I have learned that the danish SSI uses. I have only mean informed 
+#    of their mean, so the standard deviation I have chosen to be the same as
+#    the mean. This number can be changed as we get more info from SSI.
+
+# CDC
+# https://wwwnc.cdc.gov/eid/article/26/6/20-0357_article
+cdc_mean_si = 3.96
+cdc_std_si = 4.75
+
+# SSI - kan arbejde med 5-6 (jf. WHO p. 2: https://www.who.int/docs/default-source/coronaviruse/situation-reports/20200306-sitrep-46-covid-19.pdf?sfvrsn=96b04adf_4)
+ssi_mean_si = 4.7
+ssi_std_si = 4.7
+
+confirmed_cases <- ads  %>% drop_na() %>% select(I = rollingmean)
+
+cdc_R <- estimate_R(confirmed_cases, 
+                    method = "parametric_si", 
+                    config = make_config(list(mean_si = cdc_mean_si, 
+                                              std_si = cdc_std_si)))
+
+ssi_R <- estimate_R(confirmed_cases, 
+                    method = "parametric_si", 
+                    config = make_config(list(mean_si = ssi_mean_si, 
+                                              std_si = ssi_std_si)))
+
+cdc_pd <- cdc_R$R %>% 
+    as_tibble() %>% 
+    select(t = t_end, 
+           R0 = `Mean(R)`, 
+           lower = `Quantile.0.05(R)`, 
+           upper = `Quantile.0.95(R)`) %>%
+    mutate(source = "cdc") 
+
+ssi_pd <- ssi_R$R %>% 
+    as_tibble() %>% 
+    select(t = t_end, 
+           R0 = `Mean(R)`, 
+           lower = `Quantile.0.05(R)`, 
+           upper = `Quantile.0.95(R)`) %>%
+    mutate(source = "ssi") 
+
+pd <- bind_rows(cdc_pd, ssi_pd) %>%
+    mutate(t = (t-1) + as.Date("2020-02-28"))
+
+pd$Date <- pd$t
+
+facetlabs <- c(cdc = "Danish R0 using Center for Disease Control inputs",
+               ssi = "Danish R0 using Statens Serum Institut inputs")
+
+p1 <- ggplot(pd) + 
+    geom_ribbon(aes(x = Date, ymin = lower, ymax = upper), fill = "lightgrey") + 
+    geom_line(aes(x = Date, y = R0)) + 
+    geom_hline(yintercept = 1, linetype = "dashed") + 
+    facet_wrap(~ source, ncol = 1, 
+               labeller = labeller(source = facetlabs)) + 
+    theme_minimal() + 
+    labs(x = "", y = "") + 
+    scale_x_date(breaks = "weeks", labels = scales::date_format("%d-%m"))
+
+ggplotly(p1)
+  
+```
+
+Please note that the above graphs are adapted versions of estimates created by [Mikkel Krogsholm](https://gist.github.com/mikkelkrogsholm/df208ab854e3c13ab07d23c027af7b5b).
+
 About
 =======================================================================
 
@@ -496,6 +589,8 @@ This Coronavirus dashboard: the case of Denmark provides an overview of the 2019
 The Dashboard has been further adapted per the dashboard developed by [Antoine Soetewey](https://github.com/AntoineSoetewey).
 <br>
 
+The part on estimating R-naught/R0 is based on code from [Mikkel Krogsholm](https://gist.github.com/mikkelkrogsholm/df208ab854e3c13ab07d23c027af7b5b).
+
 **Data**
 <br>
 The input data for this dashboard is the dataset available from the [`{coronavirus}`](https://github.com/RamiKrispin/coronavirus){target="_blank"} R package. Make sure to download the development version of the package to have the latest data:
@@ -503,13 +598,10 @@ The input data for this dashboard is the dataset available from the [`{coronavir
 install.packages("devtools")
 devtools::install_github("RamiKrispin/coronavirus")
 ```
-The data and dashboard are refreshed on a daily basis at approx. 8.00 CET (GMT+1).
+The data and dashboard is refreshed on an almost daily basis.
 
 The raw data is pulled from the Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE) Coronavirus [repository](https://github.com/RamiKrispin/coronavirus-csv){target="_blank"}.
 
 **Update**
 <br>
 The data is as of `r format(max(coronavirus$date))` and the dashboard has been updated on `r format(Sys.time())`.
-
-<br>
-Contact me at this 
