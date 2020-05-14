@@ -36,8 +36,8 @@ death_color <- "red"
 #------------------ Data ------------------
 df <- coronavirus %>%
   # dplyr::filter(date == max(date)) %>%
-  dplyr::filter(Country.Region == "Denmark") %>%
-  dplyr::group_by(Country.Region, type) %>%
+  dplyr::filter(country == "Denmark") %>%
+  dplyr::group_by(country, type) %>%
   dplyr::summarise(total = sum(cases)) %>%
   tidyr::pivot_wider(
     names_from = type,
@@ -47,13 +47,13 @@ df <- coronavirus %>%
   dplyr::mutate(unrecovered = confirmed - ifelse(is.na(death), 0, death)) %>%
   dplyr::arrange(-confirmed) %>%
   dplyr::ungroup() %>%
-  dplyr::mutate(country = dplyr::if_else(Country.Region == "United Arab Emirates", "UAE", Country.Region)) %>%
+  dplyr::mutate(country = dplyr::if_else(country == "United Arab Emirates", "UAE", country)) %>%
   dplyr::mutate(country = dplyr::if_else(country == "Mainland China", "China", country)) %>%
   dplyr::mutate(country = dplyr::if_else(country == "North Macedonia", "N.Macedonia", country)) %>%
   dplyr::mutate(country = trimws(country)) %>%
   dplyr::mutate(country = factor(country, levels = country))
 df_daily <- coronavirus %>%
-  dplyr::filter(Country.Region == "Denmark") %>%
+  dplyr::filter(country == "Denmark") %>%
   dplyr::group_by(date, type) %>%
   dplyr::summarise(total = sum(cases, na.rm = TRUE)) %>%
   tidyr::pivot_wider(
@@ -259,7 +259,7 @@ Column {data-width=400}
 daily_confirmed <- coronavirus %>%
   dplyr::filter(type == "confirmed") %>%
   dplyr::filter(date >= "2020-02-27") %>%
-  dplyr::mutate(country = Country.Region) %>%
+  dplyr::mutate(country = country) %>%
   dplyr::group_by(date, country) %>%
   dplyr::summarise(total = sum(cases)) %>%
   dplyr::ungroup() %>%
@@ -320,11 +320,11 @@ daily_confirmed %>%
 ```{r daily_summary}
 df_EU <- coronavirus %>%
   # dplyr::filter(date == max(date)) %>%
-  dplyr::filter(Country.Region == "Denmark" |
-    Country.Region == "Norway" |
-    Country.Region == "Finland" |
-    Country.Region == "Sweden") %>%
-  dplyr::group_by(Country.Region, type) %>%
+  dplyr::filter(country == "Denmark" |
+    country == "Norway" |
+    country == "Finland" |
+    country == "Sweden") %>%
+  dplyr::group_by(country, type) %>%
   dplyr::summarise(total = sum(cases)) %>%
   tidyr::pivot_wider(
     names_from = type,
@@ -334,7 +334,7 @@ df_EU <- coronavirus %>%
   dplyr::mutate(unrecovered = confirmed - ifelse(is.na(death), 0, death)) %>%
   dplyr::arrange(confirmed) %>%
   dplyr::ungroup() %>%
-  dplyr::mutate(country = dplyr::if_else(Country.Region == "United Arab Emirates", "UAE", Country.Region)) %>%
+  dplyr::mutate(country = dplyr::if_else(country == "United Arab Emirates", "UAE", country)) %>%
   dplyr::mutate(country = dplyr::if_else(country == "Mainland China", "China", country)) %>%
   dplyr::mutate(country = dplyr::if_else(country == "North Macedonia", "N.Macedonia", country)) %>%
   dplyr::mutate(country = trimws(country)) %>%
@@ -384,9 +384,9 @@ library(leaflet)
 library(leafpop)
 library(purrr)
 cv_data_for_plot <- coronavirus %>%
-  # dplyr::filter(Country.Region == "Denmark") %>%
+  # dplyr::filter(country == "Denmark") %>%
   dplyr::filter(cases > 0) %>%
-  dplyr::group_by(Country.Region, Province.State, Lat, Long, type) %>%
+  dplyr::group_by(country, lat, long, type) %>%
   dplyr::summarise(cases = sum(cases)) %>%
   dplyr::mutate(log_cases = 2 * log(cases)) %>%
   dplyr::ungroup()
@@ -398,7 +398,7 @@ names(cv_data_for_plot.split) %>%
     map_object <<- map_object %>%
       addCircleMarkers(
         data = cv_data_for_plot.split[[df]],
-        lng = ~Long, lat = ~Lat,
+        lng = ~long, lat = ~lat,
         #                 label=~as.character(cases),
         color = ~ pal(type),
         stroke = FALSE,
@@ -407,7 +407,7 @@ names(cv_data_for_plot.split) %>%
         popup = leafpop::popupTable(cv_data_for_plot.split[[df]],
           feature.id = FALSE,
           row.numbers = FALSE,
-          zcol = c("type", "cases", "Country.Region", "Province.State")
+          zcol = c("type", "cases", "country")
         ),
         group = df,
         #                 clusterOptions = markerClusterOptions(removeOutsideVisibleBounds = F),
@@ -433,13 +433,17 @@ Row {data-width=400}
 
 ### **ARIMA - AutoRegressive-Integrated-Moving-Average - for Danish deaths**
     
-```{r}
+```{r forecast}
 library(forecast)
-min_data <- min(df_daily$date)
-max_data <- max(df_daily$date)
+library(tidyverse)
+
+forecast_data <- df_daily %>% slice(1:(n()-4))
+
+min_data <- min(forecast_data$date)
+max_data <- max(forecast_data$date)
 forecast_length = 30
 
-TS_data <- ts(df_daily[,c(1,7)], frequency = 7)
+TS_data <- ts(forecast_data[,c(1,7)], frequency = 7)
 TS_fit <- auto.arima(TS_data[,2])
 TS_fc <- forecast(TS_fit, h=forecast_length)
 
@@ -447,7 +451,7 @@ fore.dates <- seq.Date(from = max_data+1,
                        to = max_data+forecast_length,
                        by="days")
 
-plot_daily <- df_daily[df_daily$date >= "2020-02-27",]
+plot_daily <- forecast_data[forecast_data$date >= "2020-02-27",]
 
 TS_fc$mean <- round(TS_fc$mean, digits=0)
 TS_fc$upper <- round(TS_fc$upper, digits=0)
@@ -502,7 +506,7 @@ hosp_raw <- hosp_raw %>%
     mutate(date = date %>% lubridate::ymd_hms() %>% as.Date())
 
 ads <- hosp_raw %>%
-    # slice(1:(n()-4)) %>% # remove last four entries
+    slice(1:(n()-4)) %>% # remove last four entries
     mutate(rollingmean = c(rep(NA, 3),  # Adding a rolling mean
                            zoo::rollmean(x = newly_hospitalized, k = 7), 
                            rep(NA, 3)))
