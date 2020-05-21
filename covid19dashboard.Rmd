@@ -437,7 +437,7 @@ Row {data-width=400}
 library(forecast)
 library(tidyverse)
 
-forecast_data <- df_daily %>% slice(1:(n()-4))
+forecast_data <- df_daily# %>% slice(1:(n()-4))
 
 min_data <- min(forecast_data$date)
 max_data <- max(forecast_data$date)
@@ -506,10 +506,11 @@ hosp_raw <- hosp_raw %>%
     mutate(date = date %>% lubridate::ymd_hms() %>% as.Date())
 
 ads <- hosp_raw %>%
-    slice(1:(n()-4)) %>% # remove last four entries
-    mutate(rollingmean = c(rep(NA, 3),  # Adding a rolling mean
+      mutate(rollingmean = c(rep(NA, 3),  # Adding a rolling mean
                            zoo::rollmean(x = newly_hospitalized, k = 7), 
                            rep(NA, 3)))
+    #slice(1:(n()-4)) %>% # remove last four entries
+
 
 ## Choosing parameters for estimating R ########################################
 
