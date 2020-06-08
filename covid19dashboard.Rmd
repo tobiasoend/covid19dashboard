@@ -237,6 +237,45 @@ plotly::plot_ly(data = df_daily) %>%
     ax = 0,
     ay = 60
   ) %>%
+  plotly::add_annotations(
+    x = as.Date("2020-06-08"),
+    y = 14,
+    text = "Reopening - stage 1",
+    xref = "x",
+    yref = "y",
+    arrowhead = 5,
+    arrowhead = 3,
+    arrowsize = 1,
+    showarrow = T,
+    ax = 0,
+    ay = 60
+  # )  %>%
+  # plotly::add_annotations(
+  #   x = as.Date("2020-07-08"),
+  #   y = 14,
+  #   text = "Reopening - stage 2",
+  #   xref = "x",
+  #   yref = "y",
+  #   arrowhead = 5,
+  #   arrowhead = 3,
+  #   arrowsize = 1,
+  #   showarrow = T,
+  #   ax = 0,
+  #   ay = 60
+  # )  %>%
+  # plotly::add_annotations(
+  #   x = as.Date("2020-08-08"),
+  #   y = 14,
+  #   text = "Reopening - stage 3",
+  #   xref = "x",
+  #   yref = "y",
+  #   arrowhead = 5,
+  #   arrowhead = 3,
+  #   arrowsize = 1,
+  #   showarrow = T,
+  #   ax = 0,
+  #   ay = 60
+  ) %>%
   plotly::layout(
     title = "",
     yaxis = list(title = "Cumulative number of cases"),
