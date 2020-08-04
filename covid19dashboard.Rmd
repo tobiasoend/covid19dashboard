@@ -539,7 +539,7 @@ plotly::plot_ly() %>%
 <!-- library(EpiEstim) -->
 <!-- library(plotly) -->
 
-<!-- url <- "https://api.covid19data.dk/ssi_newly_hospitalized" -->
+<!-- url <- "https://covid19data.dk/coviddata" -->
 <!-- hosp_raw <- jsonlite::fromJSON(url) -->
 <!-- hosp_raw <- hosp_raw %>% -->
 <!--     as_tibble() %>% -->
@@ -547,7 +547,7 @@ plotly::plot_ly() %>%
 
 <!-- ads <- hosp_raw %>% -->
 <!--       mutate(rollingmean = c(rep(NA, 3),  # Adding a rolling mean -->
-<!--                            zoo::rollmean(x = newly_hospitalized, k = 7),  -->
+<!--                            zoo::rollmean(x = newly_hospitalized, k = 7), -->
 <!--                            rep(NA, 3))) -->
 <!--     #slice(1:(n()-4)) %>% # remove last four entries -->
 
@@ -558,7 +558,7 @@ plotly::plot_ly() %>%
 <!-- # to estimate R. We will use two sets of parameters: -->
 <!-- # 1) from the CDC where they have estimated mean and the standard deviation for -->
 <!-- #    the serial interval. -->
-<!-- # 2) Numbers I have learned that the danish SSI uses. I have only mean informed  -->
+<!-- # 2) Numbers I have learned that the danish SSI uses. I have only mean informed -->
 <!-- #    of their mean, so the standard deviation I have chosen to be the same as -->
 <!-- #    the mean. This number can be changed as we get more info from SSI. -->
 
@@ -573,31 +573,31 @@ plotly::plot_ly() %>%
 
 <!-- confirmed_cases <- ads  %>% drop_na() %>% select(I = rollingmean) -->
 
-<!-- cdc_R <- estimate_R(confirmed_cases,  -->
-<!--                     method = "parametric_si",  -->
-<!--                     config = make_config(list(mean_si = cdc_mean_si,  -->
+<!-- cdc_R <- estimate_R(confirmed_cases, -->
+<!--                     method = "parametric_si", -->
+<!--                     config = make_config(list(mean_si = cdc_mean_si, -->
 <!--                                               std_si = cdc_std_si))) -->
 
-<!-- ssi_R <- estimate_R(confirmed_cases,  -->
-<!--                     method = "parametric_si",  -->
-<!--                     config = make_config(list(mean_si = ssi_mean_si,  -->
+<!-- ssi_R <- estimate_R(confirmed_cases, -->
+<!--                     method = "parametric_si", -->
+<!--                     config = make_config(list(mean_si = ssi_mean_si, -->
 <!--                                               std_si = ssi_std_si))) -->
 
-<!-- cdc_pd <- cdc_R$R %>%  -->
-<!--     as_tibble() %>%  -->
-<!--     select(t = t_end,  -->
-<!--            R0 = `Mean(R)`,  -->
-<!--            lower = `Quantile.0.05(R)`,  -->
+<!-- cdc_pd <- cdc_R$R %>% -->
+<!--     as_tibble() %>% -->
+<!--     select(t = t_end, -->
+<!--            R0 = `Mean(R)`, -->
+<!--            lower = `Quantile.0.05(R)`, -->
 <!--            upper = `Quantile.0.95(R)`) %>% -->
-<!--     mutate(source = "cdc")  -->
+<!--     mutate(source = "cdc") -->
 
-<!-- ssi_pd <- ssi_R$R %>%  -->
-<!--     as_tibble() %>%  -->
-<!--     select(t = t_end,  -->
-<!--            R0 = `Mean(R)`,  -->
-<!--            lower = `Quantile.0.05(R)`,  -->
+<!-- ssi_pd <- ssi_R$R %>% -->
+<!--     as_tibble() %>% -->
+<!--     select(t = t_end, -->
+<!--            R0 = `Mean(R)`, -->
+<!--            lower = `Quantile.0.05(R)`, -->
 <!--            upper = `Quantile.0.95(R)`) %>% -->
-<!--     mutate(source = "ssi")  -->
+<!--     mutate(source = "ssi") -->
 
 <!-- pd <- bind_rows(cdc_pd, ssi_pd) %>% -->
 <!--     mutate(t = (t-1) + as.Date("2020-02-28")) -->
@@ -607,14 +607,14 @@ plotly::plot_ly() %>%
 <!-- facetlabs <- c(cdc = "Danish R0 using Center for Disease Control inputs", -->
 <!--                ssi = "Danish R0 using Statens Serum Institut inputs") -->
 
-<!-- p1 <- ggplot(pd) +  -->
-<!--     geom_ribbon(aes(x = Date, ymin = lower, ymax = upper), fill = "lightgrey") +  -->
-<!--     geom_line(aes(x = Date, y = R0)) +  -->
-<!--     geom_hline(yintercept = 1, linetype = "dashed") +  -->
-<!--     facet_wrap(~ source, ncol = 1,  -->
-<!--                labeller = labeller(source = facetlabs)) +  -->
-<!--     theme_minimal() +  -->
-<!--     labs(x = "", y = "") +  -->
+<!-- p1 <- ggplot(pd) + -->
+<!--     geom_ribbon(aes(x = Date, ymin = lower, ymax = upper), fill = "lightgrey") + -->
+<!--     geom_line(aes(x = Date, y = R0)) + -->
+<!--     geom_hline(yintercept = 1, linetype = "dashed") + -->
+<!--     facet_wrap(~ source, ncol = 1, -->
+<!--                labeller = labeller(source = facetlabs)) + -->
+<!--     theme_minimal() + -->
+<!--     labs(x = "", y = "") + -->
 <!--     scale_x_date(breaks = "weeks", labels = scales::date_format("%d-%m")) -->
 
 <!-- ggplotly(p1) -->
