@@ -538,6 +538,7 @@ plotly::plot_ly() %>%
 <!-- library(tidyverse) -->
 <!-- library(EpiEstim) -->
 <!-- library(plotly) -->
+<!-- library(jsonlite) -->
 
 <!-- url <- "https://covid19data.dk/coviddata" -->
 <!-- hosp_raw <- jsonlite::fromJSON(url) -->
